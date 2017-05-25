@@ -12,10 +12,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -93,7 +91,6 @@ public class createHistoricalGraph {
 		br.close();
 		System.out.println("HashTags size: " + hashTags.size());
 		System.out.println("Dates size: " + dateToID.size());
-
 		hashTagsPerTweet.forEach((k, v) -> {
 			for (int i = 0; i < v.size(); i++)
 				for (int j = i + 1; j < v.size(); j++)

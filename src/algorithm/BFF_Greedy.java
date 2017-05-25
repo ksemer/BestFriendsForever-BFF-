@@ -1,5 +1,6 @@
 package algorithm;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -9,10 +10,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.Map.Entry;
 
+import algorithm.wqu.WQuickUnionPCUnionGraph;
 import system.Config;
 import vg.Graph;
 import vg.Node;
@@ -63,7 +65,7 @@ public class BFF_Greedy {
 			this.metric = Config.AM;
 
 		graphCleaning();
-		
+
 		if (this.lvg.isEmpty()) {
 			System.out.println("There is not any solution for Metric: " + metric + " ,Interval: " + iQ);
 			return;
@@ -86,15 +88,27 @@ public class BFF_Greedy {
 			runCharikar(lvg_);
 
 		int step = stepsOfMaximumScore.entrySet().iterator().next().getValue().get(0);
+		Set<Node> conn = null;
+
+		if (Config.CONNECTIVITY)
+			conn = new HashSet<>();
 
 		for (Node n : lvg_.getNodes()) {
 
 			if (n.getRemovalStep() > step || step == 1) {
 				// add node id in solution set
 				S.add(n.getID());
+
+				if (Config.CONNECTIVITY)
+					conn.add(n);
 			}
 		}
 
+		if (Config.CONNECTIVITY) {
+			WQuickUnionPCUnionGraph wqup = new WQuickUnionPCUnionGraph(conn);
+			wqup.componentsInfo();
+			System.out.println("Metric: " + metric + ", Components: " + wqup.size());
+		}
 	}
 
 	/**
@@ -437,7 +451,7 @@ public class BFF_Greedy {
 		else if (metric == Config.MA)
 			return 2 * stepsOfMaximumScore.entrySet().iterator().next().getKey();
 		else // metric == Config.AM
-			return Double.parseDouble(
-					String.format(Locale.ENGLISH, "%.2f", (stepsOfMaximumScore.entrySet().iterator().next().getKey() / iQ.cardinality())));
+			return Double.parseDouble(String.format(Locale.ENGLISH, "%.2f",
+					(stepsOfMaximumScore.entrySet().iterator().next().getKey() / iQ.cardinality())));
 	}
 }

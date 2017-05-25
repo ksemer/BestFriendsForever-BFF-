@@ -5,19 +5,18 @@ import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
 
 import algorithm.Counter;
-
-import java.util.Set;
-
 import vg.Graph;
 import vg.LoadGraph;
 import vg.Node;
 
 /**
  * Computes dataset statistics
+ * 
  * @author ksemer
  *
  */

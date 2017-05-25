@@ -1,4 +1,4 @@
-package algorithm;
+package algorithm.wqu;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import algorithm.Counter;
 import vg.Node;
 
 /**
@@ -23,7 +24,7 @@ public class WQuickUnionTimeInstant {
 
 	// sz[i] -> size of each subset
 	private Map<Integer, Counter> sz;
-	
+
 	private Set<Node> nodes;
 
 	private int components;
@@ -135,7 +136,7 @@ public class WQuickUnionTimeInstant {
 			// print the size of its component
 			if (!checkedComps.contains(r)) {
 				checkedComps.add(r);
-				
+
 				if (size < sz.get(r).getValue()) {
 					size = sz.get(r).getValue();
 					max_comp = r;
@@ -147,44 +148,44 @@ public class WQuickUnionTimeInstant {
 		// for each node print the component
 		for (int i : id.keySet())
 			System.out.println("Node: " + i + " -- Component: " + root(i));
-		
+
 		Map<Node, Counter> st = new HashMap<>();
-		
+
 		for (Node n : this.nodes) {
 			st.put(n, new Counter());
 		}
-		
+
 		int sum = 0;
-		
+
 		for (int i = 47; i < 57; i++) {
 			for (Node n : this.nodes) {
-			
+
 				if (root(n.getID()) == max_comp) {
 					for (Entry<Node, BitSet> entry : n.getAdjacencyAsMap().entrySet()) {
 						Node trg = entry.getKey();
 
 						if (!nodes.contains(trg) || root(trg.getID()) != max_comp)
 							continue;
-						
+
 						if (entry.getValue().get(i)) {
 							st.get(n).increase();
 						}
 					}
 				}
 			}
-			
+
 			int min = Integer.MAX_VALUE;
-			
+
 			for (Node n : this.nodes) {
 				if (root(n.getID()) != max_comp)
 					continue;
-				
-				sum+= st.get(n).getValue();
-				
+
+				sum += st.get(n).getValue();
+
 				if (st.get(n).getValue() < min)
 					min = st.get(n).getValue();
 			}
-			
+
 			System.out.println(min + "\t" + sum);
 		}
 	}

@@ -1,4 +1,4 @@
-package algorithm;
+package algorithm.wqu;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import algorithm.Counter;
 import vg.Node;
 
 /**

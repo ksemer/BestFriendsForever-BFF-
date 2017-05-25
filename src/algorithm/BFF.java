@@ -16,6 +16,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
 
+import algorithm.wqu.WQuickUnionPCUnionGraph;
 import system.Config;
 import vg.Graph;
 import vg.Node;
@@ -107,13 +108,21 @@ public class BFF {
 				// add node id in solution set
 				if (n.getRemovalStep() > step || step == 0) {
 					S.add(n.getID());
-					conn.add(n);
+
+					if (Config.CONNECTIVITY)
+						conn.add(n);
 				}
 			}
 		}
 
+		if (Config.CONNECTIVITY) {
+			WQuickUnionPCUnionGraph wqup = new WQuickUnionPCUnionGraph(conn);
+			wqup.componentsInfo();
+			System.out.println("Metric: " + metric + ", Components: " + wqup.size());
+		}
+
 		if (!seedNodes.isEmpty()) {
-			WQuickUnionPC wqup = new WQuickUnionPC(conn);
+			WQuickUnionPCUnionGraph wqup = new WQuickUnionPCUnionGraph(conn);
 			List<Node> seedN = new ArrayList<>();
 
 			for (int n : seedNodes)
@@ -442,12 +451,12 @@ public class BFF {
 				perTimeInstantScore.put(i.next(), new TreeMap<>());
 		}
 
-		WQuickUnionPC wqup = null;
+		WQuickUnionPCUnionGraph wqup = null;
 		int componentID = -1;
 
 		// if there are seed nodes
 		if (!seedNodes.isEmpty()) {
-			wqup = new WQuickUnionPC(new HashSet<>(lvg.getNodes()));
+			wqup = new WQuickUnionPCUnionGraph(new HashSet<>(lvg.getNodes()));
 			List<Integer> sN = new ArrayList<Integer>(seedNodes);
 
 			for (int i = 0; i < sN.size(); i++) {

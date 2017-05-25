@@ -28,6 +28,7 @@ public class Config {
 
 	public static boolean RUN_REAL;
 	public static boolean RUN_SYNTHETIC;
+	public static boolean CONNECTIVITY;
 
 	public static boolean RUN_BFF;
 	public static boolean RUN_O2_BFF;
@@ -61,6 +62,7 @@ public class Config {
 			// ============================================================
 			RUN_REAL = Boolean.parseBoolean(Settings.getProperty("RunReal", "false"));
 			RUN_SYNTHETIC = Boolean.parseBoolean(Settings.getProperty("RunSynthetic", "false"));
+			CONNECTIVITY = Boolean.parseBoolean(Settings.getProperty("Connectivity", "false"));
 
 			RUN_BFF = Boolean.parseBoolean(Settings.getProperty("RunBFF", "false"));
 			RUN_O2_BFF = Boolean.parseBoolean(Settings.getProperty("RunO2BFF", "false"));

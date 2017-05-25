@@ -6,9 +6,9 @@ import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.Map.Entry;
 
 import system.Config;
 import vg.Graph;

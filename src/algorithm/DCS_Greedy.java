@@ -9,9 +9,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
+
+import algorithm.wqu.WQuickUnionPCUnionGraph;
+
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.Map.Entry;
 
 import system.Config;
 import vg.Graph;
@@ -30,11 +33,11 @@ public class DCS_Greedy {
 	private BitSet iQ;
 
 	private Set<Integer> S;
-	
+
 	private Set<Integer> seedNodes;
 
 	private int instanceWithMinimum;
-	
+
 	private Map<Double, List<Integer>> maxScoreStep;
 
 	private Map<Integer, Counter> numberOfEdgesPerTimeInstant;
@@ -48,7 +51,7 @@ public class DCS_Greedy {
 	 * 
 	 * @param lvg
 	 * @param iQ
-	 * @param seedNodes 
+	 * @param seedNodes
 	 */
 	public DCS_Greedy(Graph lvg, BitSet iQ, Set<Integer> seedNodes) {
 		this.lvg = lvg;
@@ -56,14 +59,14 @@ public class DCS_Greedy {
 		this.S = new HashSet<>();
 		this.maxScoreStep = new TreeMap<>();
 		this.seedNodes = seedNodes;
-			
+
 		graphCleaning();
-		
+
 		if (this.lvg.isEmpty()) {
 			System.out.println("There is not any solution for Metric: " + Config.DCS + " ,Interval: " + iQ);
 			return;
 		}
-		
+
 		boolean executeWithSeeds = false;
 
 		// check if seedNodes exist in lvg
@@ -74,21 +77,36 @@ public class DCS_Greedy {
 			}
 		}
 
-		if (!executeWithSeeds) {	
+		if (!executeWithSeeds) {
 			// run DCS greedy algorithm
 			runDCS();
 		}
 
+		Set<Node> conn = null;
+
+		if (Config.CONNECTIVITY)
+			conn = new HashSet<>();
+
 		if (!maxScoreStep.isEmpty()) {
 			int step = maxScoreStep.entrySet().iterator().next().getValue().get(0);
-			
+
 			for (Node n : lvg.getNodes()) {
-				// n.getRemovalStep() == 0 for the last node which is not removed
+				// n.getRemovalStep() == 0 for the last node which is not
+				// removed
 				if (n.getRemovalStep() > step || n.getRemovalStep() == 0 || step == 0) {
 					// add node id in solution set
 					S.add(n.getID());
+
+					if (Config.CONNECTIVITY)
+						conn.add(n);
 				}
 			}
+		}
+
+		if (Config.CONNECTIVITY) {
+			WQuickUnionPCUnionGraph wqup = new WQuickUnionPCUnionGraph(conn);
+			wqup.componentsInfo();
+			System.out.println("Metric: 9," + " Components: " + wqup.size());
 		}
 	}
 
@@ -122,8 +140,9 @@ public class DCS_Greedy {
 			n = getMinimumDegreeNode();
 			n.setRemovalStep(step);
 			V.remove(n);
-			
-			// if there are seed nodes and seed node is the node with the minimum score
+
+			// if there are seed nodes and seed node is the node with the
+			// minimum score
 			if (seedNodes.contains(n.getID())) {
 				for (Node n1 : V)
 					if (n1.getRemovalStep() == 0)
