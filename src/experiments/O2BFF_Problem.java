@@ -3,6 +3,8 @@ package experiments;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
@@ -93,8 +95,10 @@ public class O2BFF_Problem {
 			if (Config.RUN_FIND_BFF) {
 				IntStream.range(1, 5).parallel()
 						.forEach(metric -> runInitializations(iQ, dataset, metric, sk, ek, step));
-				IntStream.range(7, 9).parallel()
-						.forEach(metric -> runInitializations(iQ, dataset, metric, sk, ek, step));
+				// FIXME
+				// IntStream.range(7, 9).parallel()
+				// .forEach(metric -> runInitializations(iQ, dataset, metric,
+				// sk, ek, step));
 			}
 			return true;
 		};
@@ -122,31 +126,52 @@ public class O2BFF_Problem {
 		c1 = () -> {
 			// for k = sk until ek with step
 			for (int k = sk; k <= ek; k += step) {
-				if (Config.RUN_BESTK_CONT)
-					run(iQ, dataset, k, k, metric, Config.CONT_BEST_K, -1);
 
-				// at least k
-				if (Config.RUN_ATLEAST_K)
-					run(iQ, dataset, k, k, metric, Config.AT_LEAST_K, -1);
-			}
-			return true;
-		};
+				if (Config.RUN_O2_ITERATIVE) {
 
-		c2 = () -> {
-			// for k = sk until ek with step
-			for (int k = sk; k <= ek; k += step) {
+					if (Config.RUN_BESTK_CONT)
+						runIterative(iQ, dataset, k, k, metric, Config.CONT_BEST_K, -1);
 
-				// random
-				if (Config.RUN_RANDOM) {
-					for (int i = 1; i <= Config.ITERATIONS; i++)
-						run(iQ, dataset, k, k, metric, Config.RANDOM, i);
+					// at least k
+					if (Config.RUN_ATLEAST_K)
+						runIterative(iQ, dataset, k, k, metric, Config.AT_LEAST_K, -1);
+
+					if (Config.RUN_AGGR)
+						runIterative(iQ, dataset, k, k, metric, Config.AGGR, -1);
+				}
+
+				if (Config.RUN_O2_INCREMENTAL) {
+
+					if (Config.RUN_DENS_IN)
+						runIncremental(iQ, dataset, k, k, metric, Config.DENS_IN, -1);
+
+					if (Config.RUN_SET_IN)
+						runIncremental(iQ, dataset, k, k, metric, Config.SET_IN, -1);
 				}
 			}
 			return true;
 		};
 
+		if (Config.RUN_O2_ITERATIVE) {
+
+			c2 = () -> {
+				// for k = sk until ek with step
+				for (int k = sk; k <= ek; k += step) {
+
+					// random
+					if (Config.RUN_RANDOM) {
+						for (int i = 1; i <= Config.ITERATIONS; i++)
+							runIterative(iQ, dataset, k, k, metric, Config.RANDOM, i);
+					}
+
+				}
+				return true;
+			};
+
+			executor.submit(c2);
+		}
+
 		executor.submit(c1);
-		executor.submit(c2);
 		executor.shutdown();
 	}
 
@@ -163,7 +188,7 @@ public class O2BFF_Problem {
 	 * @throws IOException
 	 */
 	@SuppressWarnings("unchecked")
-	private void run(BitSet iQ, String dataset, int k, int conk, int metric, int exec_type, int rC) {
+	private void runIterative(BitSet iQ, String dataset, int k, int conk, int metric, int exec_type, int rC) {
 		Set<Integer> S = null, convergedS = new HashSet<>();
 		double convergedDensity = -1, solutionDensity = 0;
 		int iteration = 1;
@@ -180,6 +205,8 @@ public class O2BFF_Problem {
 		MetricScore st = new MetricScore();
 		FileWriter stats = null;
 		String outputPath;
+		DecimalFormat df = new DecimalFormat("#.##");
+		df.setRoundingMode(RoundingMode.CEILING);
 
 		try {
 
@@ -208,6 +235,8 @@ public class O2BFF_Problem {
 				stats = new FileWriter(outputPath + "_m=" + metric + "_k=" + k + ".txt");
 			else if (exec_type == Config.AT_LEAST_K)
 				stats = new FileWriter(outputPath + "_m=" + metric + "_k=" + k + "_atleast.txt");
+			else if (exec_type == Config.AGGR)
+				stats = new FileWriter(outputPath + "_m=" + metric + "_k=" + k + "_aggr.txt");
 
 			while (true) {
 
@@ -227,6 +256,8 @@ public class O2BFF_Problem {
 						algorithm = getBestKContSolution(lvg, iQ, conk, initMetric);
 					else if (exec_type == Config.AT_LEAST_K)
 						algorithm = getAtLeastKSolution(lvg, iQ, conk, initMetric);
+					else if (exec_type == Config.AGGR)
+						algorithm = getAggrSolution(lvg, iQ, conk, initMetric);
 				}
 
 				if (algorithm instanceof BFF)
@@ -259,21 +290,29 @@ public class O2BFF_Problem {
 					solutionDensity = st.getScore();
 				}
 
-				// if current density is less than the new one
-				if (convergedDensity < solutionDensity) {
-					convergedDensity = solutionDensity;
-					convergedS = new HashSet<Integer>(S);
-				} else if (convergedDensity == solutionDensity) {
-					// if density is same with the new one check intervals and
-					// sets
-					if (iQ_old.equals(iQ_) || convergedS.equals(S) || convergedDensity == 0)
-						break;
+				if (iteration == 1 && (Double.compare(Double.NaN, solutionDensity) == 0
+						|| solutionDensity == Double.MAX_VALUE || ("" + solutionDensity).contains("E"))) {
 
-					// if there is a new set of nodes update the set
-					if (!convergedS.equals(S))
+				} else {
+
+					solutionDensity = Double.parseDouble(df.format(solutionDensity));
+					// if current density is less than the new one
+					if (convergedDensity < solutionDensity) {
+						convergedDensity = solutionDensity;
 						convergedS = new HashSet<Integer>(S);
-				} else
-					break;
+					} else if (convergedDensity == solutionDensity) {
+						// if density is same with the new one check intervals
+						// and
+						// sets
+						if (iQ_old.equals(iQ_) || convergedS.equals(S) || convergedDensity == 0)
+							break;
+
+						// if there is a new set of nodes update the set
+						if (!convergedS.equals(S))
+							convergedS = new HashSet<Integer>(S);
+					} else
+						break;
+				}
 
 				stats.write("Iteration: " + iteration++ + " Score: " + solutionDensity + " Size(S): " + S.size()
 						+ " Times: " + iQ_ + "\n");
@@ -286,6 +325,114 @@ public class O2BFF_Problem {
 
 			// write authors
 			for (int id : convergedS) {
+				if (dataset.toLowerCase().contains("dblp"))
+					stats.write(id + "\t" + LoadGraph.getAuthor(id) + "\n");
+				else if (dataset.toLowerCase().contains("twitter"))
+					stats.write(id + "\t" + LoadGraph.getHashtag(id) + "\n");
+				else
+					stats.write(id + "\n");
+			}
+			stats.write("Total time: " + (System.currentTimeMillis() - time) + " (msec)");
+			stats.close();
+		} catch (Exception e) {
+			_log.log(Level.SEVERE, "(metric, dataset, k)->" + "(" + metric + ", " + dataset + ", " + k + ")", e);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void runIncremental(BitSet iQ, String dataset, int k, int conk, int metric, int exec_type, int rC) {
+		Set<Integer> S = null;
+		double solutionDensity = 0;
+
+		_log.log(Level.INFO, "(metric, dataset, k)->" + "(" + metric + ", " + dataset + ", " + k + ")");
+
+		// same metric for the first execution of the algorithm
+		int initMetric = metric;
+		long time = System.currentTimeMillis();
+
+		// initial set of time instances
+		BitSet iQ_ = (BitSet) iQ.clone();
+		Object algorithm = null;
+		MetricScore st = new MetricScore();
+		FileWriter stats = null;
+		String outputPath;
+		DecimalFormat df = new DecimalFormat("#.##");
+		df.setRoundingMode(RoundingMode.CEILING);
+
+		try {
+
+			File dir = new File(Config.OUTPUT_PATH + "/o2/");
+
+			if (!dir.exists())
+				dir.mkdir();
+
+			if (exec_type == Config.RANDOM) {
+				dir = new File(Config.OUTPUT_PATH + "/o2/random/");
+
+				if (!dir.exists())
+					dir.mkdir();
+
+				outputPath = Config.OUTPUT_PATH + "/o2/random/" + dataset;
+			} else
+				outputPath = Config.OUTPUT_PATH + "/o2/" + dataset;
+
+			String datasetPath = Config.DATA_PATH + dataset;
+
+			Graph lvg = LoadGraph.loadDataset(iQ, datasetPath);
+
+			if (exec_type == Config.SET_IN) {
+				stats = new FileWriter(outputPath + "_m=" + metric + "_k=" + k + "_sa.txt");
+//				iQ_ = getKSimilarSolution(lvg, iQ, conk, initMetric);
+				iQ_ = getKSimilarMinAvgSolution(lvg, iQ, conk, initMetric, false);
+			} else if (exec_type == Config.DENS_IN) {
+				stats = new FileWriter(outputPath + "_m=" + metric + "_k=" + k + "_da.txt");
+//				iQ_ = getKSimilarDensSolution(lvg, iQ, conk, initMetric);
+				iQ_ = getKSimilarDensMinAvgSolution(lvg, iQ, conk, initMetric, false);
+			}
+
+			Graph lvg_ = Graph.deepClone(lvg);
+
+			if (metric == Config.DCS)
+				algorithm = new DCS_Greedy(lvg_, iQ_, seedNodes);
+			else if (metric == Config.TMA || metric == Config.TAM)
+				algorithm = new BFF_Greedy(lvg_, iQ_, metric, seedNodes);
+			else
+				algorithm = new BFF(lvg_, iQ_, metric, seedNodes);
+
+			if (algorithm instanceof BFF)
+				S = ((BFF) algorithm).getSolutionSet();
+			else if (algorithm instanceof BFF_Greedy)
+				S = ((BFF_Greedy) algorithm).getSolutionSet();
+			else if (algorithm instanceof DCS_Greedy)
+				S = ((DCS_Greedy) algorithm).getSolutionSet();
+			else
+				// from union
+				S = ((Set<Integer>) algorithm);
+
+			// retrieve time instants size of k
+			if (metric == Config.MM || metric == Config.AM || metric == Config.TAM || metric == Config.MAM)
+				iQ_ = st.getKTimesMD(lvg, stats, iQ, S, k, metric);
+			else
+				iQ_ = st.getKTimesAD(lvg, stats, iQ, S, k, metric);
+
+			// retrieve solution's density
+			if (algorithm instanceof BFF)
+				solutionDensity = ((BFF) algorithm).getSolutionDensity();
+			else if (algorithm instanceof BFF_Greedy)
+				solutionDensity = ((BFF_Greedy) algorithm).getSolutionDensity();
+			else if (algorithm instanceof DCS_Greedy)
+				solutionDensity = ((DCS_Greedy) algorithm).getSolutionDensity();
+			else {
+				// If the solution set is returned from union initialization
+				solutionDensity = st.getScore();
+			}
+
+			solutionDensity = Double.parseDouble(df.format(solutionDensity));
+
+			stats.write("Score: " + solutionDensity + " Size(S): " + S.size() + " Times: " + iQ_ + "\n");
+
+			// write authors
+			for (int id : S) {
 				if (dataset.toLowerCase().contains("dblp"))
 					stats.write(id + "\t" + LoadGraph.getAuthor(id) + "\n");
 				else if (dataset.toLowerCase().contains("twitter"))
@@ -480,6 +627,509 @@ public class O2BFF_Problem {
 	}
 
 	/**
+	 * Aggregate solution
+	 * 
+	 * @param lvg
+	 * @param iQ
+	 * @param conk
+	 * @param initMetric
+	 * @return
+	 */
+	private Object getAggrSolution(Graph lvg, BitSet iQ, int conk, int initMetric) {
+		Object algorithm;
+		Graph lvg_;
+		Set<Integer> S = new HashSet<>();
+
+		lvg_ = Graph.deepClone(lvg);
+
+		algorithm = new BFF(lvg_, (BitSet) iQ.clone(), Config.AA, Collections.emptySet());
+		S = ((BFF) algorithm).getSolutionSet();
+
+		return S;
+	}
+
+	/**
+	 * Incremental similar k solution
+	 * 
+	 * @param lvg
+	 * @param iQ
+	 * @param k
+	 * @param initMetric
+	 * @return
+	 * @throws IOException
+	 */
+	private BitSet getKSimilarSolution(Graph lvg, BitSet iQ, int k, int initMetric) throws IOException {
+		BitSet iQ_ = null;
+		Object algorithm;
+		Graph lvg_;
+		Set<Integer> solSet = null;
+		List<Set<Integer>> solutions = new ArrayList<>();
+		List<Integer> times = new ArrayList<>();
+
+		for (int i = iQ.nextSetBit(0); i >= 0; i = iQ.nextSetBit(i + 1)) {
+			iQ_ = new BitSet();
+			iQ_.set(i);
+			times.add(i);
+
+			lvg_ = Graph.deepClone(lvg);
+
+			if (initMetric == Config.DCS)
+				algorithm = new DCS_Greedy(lvg_, iQ_, Collections.emptySet());
+			else if (initMetric == Config.TMA || initMetric == Config.TAM)
+				algorithm = new BFF_Greedy(lvg_, iQ_, initMetric, Collections.emptySet());
+			else
+				algorithm = new BFF(lvg_, iQ_, initMetric, Collections.emptySet());
+
+			if (algorithm instanceof BFF)
+				solSet = ((BFF) algorithm).getSolutionSet();
+			else if (algorithm instanceof BFF_Greedy)
+				solSet = ((BFF_Greedy) algorithm).getSolutionSet();
+			else if (algorithm instanceof DCS_Greedy)
+				solSet = ((DCS_Greedy) algorithm).getSolutionSet();
+
+			solutions.add(solSet);
+		}
+
+		BitSet iQ_r = new BitSet();
+
+		Set<Integer> union;
+		double jaccard;
+		DecimalFormat df = new DecimalFormat("#.##");
+		df.setRoundingMode(RoundingMode.CEILING);
+		int p[] = new int[2];
+		double max = -1;
+
+		for (int i = 0; i < solutions.size(); i++) {
+			Set<Integer> a = new HashSet<>(solutions.get(i));
+
+			for (int j = i + 1; j < solutions.size(); j++) {
+				Set<Integer> b = new HashSet<>(solutions.get(j));
+
+				a.retainAll(b);
+
+				union = new HashSet<>(solutions.get(i));
+				union.addAll(b);
+
+				jaccard = Double.parseDouble(df.format((double) a.size() / union.size()));
+
+				if (max < jaccard) {
+					max = jaccard;
+					p[0] = i;
+					p[1] = j;
+				}
+			}
+		}
+
+		Set<Integer> checked = new HashSet<>();
+		checked.add(p[0]);
+		checked.add(p[1]);
+
+		iQ_r.set(times.get(p[0]));
+		iQ_r.set(times.get(p[1]));
+
+		if (iQ_r.cardinality() == k)
+			return iQ_r;
+
+		Set<Integer> inter = new HashSet<>(solutions.get(p[0]));
+		inter.retainAll(solutions.get(p[1]));
+
+		while (iQ_r.cardinality() != k) {
+			max = -1;
+			int t = -1;
+			Set<Integer> in = null;
+
+			for (int i = 0; i < solutions.size(); i++) {
+				if (checked.contains(i))
+					continue;
+
+				Set<Integer> a = new HashSet<>(solutions.get(i));
+				Set<Integer> c = new HashSet<>(inter);
+
+				c.addAll(a);
+				a.retainAll(inter);
+
+				jaccard = Double.parseDouble(df.format((double) a.size() / c.size()));
+
+				if (max < jaccard) {
+					max = jaccard;
+					t = i;
+					in = new HashSet<>(a);
+				}
+			}
+
+			inter = new HashSet<>(in);
+			iQ_r.set(times.get(t));
+			checked.add(t);
+		}
+
+		return iQ_r;
+	}
+
+	/**
+	 * Incremental Min and Avg set similarity
+	 * 
+	 * @param lvg
+	 * @param iQ
+	 * @param k
+	 * @param initMetric
+	 * @param runMin
+	 * @return
+	 */
+	@SuppressWarnings("unused")
+	private BitSet getKSimilarMinAvgSolution(Graph lvg, BitSet iQ, int k, int initMetric, boolean runMin) {
+		BitSet iQ_ = null;
+		Object algorithm;
+		Graph lvg_;
+		Set<Integer> solSet = null;
+		List<Set<Integer>> solutions = new ArrayList<>();
+		List<Integer> times = new ArrayList<>();
+
+		for (int i = iQ.nextSetBit(0); i >= 0; i = iQ.nextSetBit(i + 1)) {
+			iQ_ = new BitSet();
+			iQ_.set(i);
+			times.add(i);
+
+			lvg_ = Graph.deepClone(lvg);
+
+			if (initMetric == Config.DCS)
+				algorithm = new DCS_Greedy(lvg_, iQ_, Collections.emptySet());
+			else if (initMetric == Config.TMA || initMetric == Config.TAM)
+				algorithm = new BFF_Greedy(lvg_, iQ_, initMetric, Collections.emptySet());
+			else
+				algorithm = new BFF(lvg_, iQ_, initMetric, Collections.emptySet());
+
+			if (algorithm instanceof BFF)
+				solSet = ((BFF) algorithm).getSolutionSet();
+			else if (algorithm instanceof BFF_Greedy)
+				solSet = ((BFF_Greedy) algorithm).getSolutionSet();
+			else if (algorithm instanceof DCS_Greedy)
+				solSet = ((DCS_Greedy) algorithm).getSolutionSet();
+
+			solutions.add(solSet);
+		}
+
+		Set<Integer> union;
+		double jaccard, max = -1;
+		DecimalFormat df = new DecimalFormat("#.##");
+		df.setRoundingMode(RoundingMode.CEILING);
+
+		double[][] sim = new double[solutions.size()][solutions.size()];
+		int p[] = new int[2];
+
+		for (int i = 0; i < solutions.size(); i++) {
+			Set<Integer> a = new HashSet<>(solutions.get(i));
+
+			for (int j = i + 1; j < solutions.size(); j++) {
+				Set<Integer> b = new HashSet<>(solutions.get(j));
+
+				a.retainAll(b);
+
+				union = new HashSet<>(solutions.get(i));
+				union.addAll(b);
+
+				jaccard = Double.parseDouble(df.format((double) a.size() / union.size()));
+
+				sim[i][j] = jaccard;
+				sim[j][i] = jaccard;
+
+				if (max < jaccard) {
+					max = jaccard;
+					p[0] = i;
+					p[1] = j;
+				}
+			}
+		}
+
+		BitSet iQ_r = new BitSet();
+		Set<Integer> checked = new HashSet<>(), all = new HashSet<>();
+
+		iQ_r.set(times.get(p[0]));
+		iQ_r.set(times.get(p[1]));
+		checked.add(p[0]);
+		checked.add(p[1]);
+
+		if (iQ_r.cardinality() == k)
+			return iQ_r;
+
+		for (int i = 0; i < solutions.size(); i++) {
+			if (!checked.contains(i))
+				all.add(i);
+		}
+
+		if (runMin) {
+			while (iQ_r.cardinality() != k) {
+				int t = -1;
+				max = -1;
+
+				for (int j : all) {
+					double min = Double.MAX_VALUE;
+
+					for (int i : checked) {
+						double s = sim[i][j];
+
+						if (min > s)
+							min = s;
+					}
+
+					if (min > max) {
+						max = min;
+						t = j;
+					}
+				}
+
+				iQ_r.set(times.get(t));
+				all.remove(t);
+				checked.add(t);
+			}
+		} else {
+			while (iQ_r.cardinality() != k) {
+				int t = -1;
+				max = -1;
+
+				for (int j : all) {
+					double s = 0;
+
+					for (int i : checked)
+						s += sim[i][j];
+
+					if (max < s) {
+						max = s;
+						t = j;
+					}
+				}
+
+				iQ_r.set(times.get(t));
+				all.remove(t);
+				checked.add(t);
+			}
+		}
+
+		return iQ_r;
+	}
+
+	/**
+	 * Incremental k densest solution
+	 * 
+	 * @param lvg
+	 * @param iQ
+	 * @param k
+	 * @param initMetric
+	 * @return
+	 * @throws IOException
+	 */
+	private BitSet getKSimilarDensSolution(Graph lvg, BitSet iQ, int k, int initMetric) throws IOException {
+		BitSet iQ_ = null;
+		Object algorithm;
+		Graph lvg_;
+
+		double[][] sim = new double[iQ.cardinality()][iQ.cardinality()];
+		int[] p = new int[2];
+		double max = -1;
+		List<Integer> times = new ArrayList<>();
+
+		for (int i = iQ.nextSetBit(0); i >= 0; i = iQ.nextSetBit(i + 1))
+			times.add(i);
+
+		for (int i = 0; i < times.size(); i++) {
+			iQ_ = new BitSet();
+			iQ_.set(times.get(i));
+
+			for (int j = i + 1; j < times.size(); j++) {
+				iQ_.set(times.get(j));
+
+				lvg_ = Graph.deepClone(lvg);
+
+				if (initMetric == Config.DCS)
+					algorithm = new DCS_Greedy(lvg_, iQ_, Collections.emptySet());
+				else if (initMetric == Config.TMA || initMetric == Config.TAM)
+					algorithm = new BFF_Greedy(lvg_, iQ_, initMetric, Collections.emptySet());
+				else
+					algorithm = new BFF(lvg_, iQ_, initMetric, Collections.emptySet());
+
+				sim[i][j] = ((BFF) algorithm).getSolutionDensity();
+				sim[j][i] = ((BFF) algorithm).getSolutionDensity();
+
+				if (max < sim[i][j]) {
+					max = sim[i][j];
+					p[0] = i;
+					p[1] = j;
+				}
+			}
+		}
+
+		BitSet iQ_r = new BitSet();
+		Set<Integer> checked = new HashSet<>(), all = new HashSet<>();
+
+		iQ_r.set(times.get(p[0]));
+		iQ_r.set(times.get(p[1]));
+		checked.add(p[0]);
+		checked.add(p[1]);
+
+		if (iQ_r.cardinality() == k)
+			return iQ_r;
+
+		for (int i = 0; i < times.size(); i++) {
+			if (!checked.contains(i))
+				all.add(i);
+		}
+
+		while (iQ_r.cardinality() != k) {
+			max = -1;
+			int t = -1;
+			iQ_ = new BitSet();
+			double s;
+
+			for (int j : all) {
+				iQ_ = (BitSet) iQ_r.clone();
+				iQ_.set(times.get(j));
+
+				lvg_ = Graph.deepClone(lvg);
+
+				if (initMetric == Config.DCS)
+					algorithm = new DCS_Greedy(lvg_, iQ_, Collections.emptySet());
+				else if (initMetric == Config.TMA || initMetric == Config.TAM)
+					algorithm = new BFF_Greedy(lvg_, iQ_, initMetric, Collections.emptySet());
+				else
+					algorithm = new BFF(lvg_, iQ_, initMetric, Collections.emptySet());
+
+				s = ((BFF) algorithm).getSolutionDensity();
+
+				if (max < s) {
+					max = s;
+					t = j;
+				}
+
+			}
+
+			iQ_r.set(times.get(t));
+			checked.add(t);
+			all.remove(t);
+		}
+
+		return iQ_r;
+	}
+
+	/**
+	 * Incremental Min and Avg density similarity
+	 * 
+	 * @param lvg
+	 * @param iQ
+	 * @param k
+	 * @param initMetric
+	 * @param runMin
+	 * @return
+	 * @throws IOException
+	 */
+	@SuppressWarnings("unused")
+	private BitSet getKSimilarDensMinAvgSolution(Graph lvg, BitSet iQ, int k, int initMetric, boolean runMin)
+			throws IOException {
+		BitSet iQ_ = null;
+		Object algorithm;
+		Graph lvg_;
+
+		double[][] sim = new double[iQ.cardinality()][iQ.cardinality()];
+		int[] p = new int[2];
+		double max = -1;
+		List<Integer> times = new ArrayList<>();
+
+		for (int i = iQ.nextSetBit(0); i >= 0; i = iQ.nextSetBit(i + 1))
+			times.add(i);
+
+		for (int i = 0; i < times.size(); i++) {
+			iQ_ = new BitSet();
+			iQ_.set(times.get(i));
+
+			for (int j = i + 1; j < times.size(); j++) {
+				iQ_.set(times.get(j));
+
+				lvg_ = Graph.deepClone(lvg);
+
+				if (initMetric == Config.DCS)
+					algorithm = new DCS_Greedy(lvg_, iQ_, Collections.emptySet());
+				else if (initMetric == Config.TMA || initMetric == Config.TAM)
+					algorithm = new BFF_Greedy(lvg_, iQ_, initMetric, Collections.emptySet());
+				else
+					algorithm = new BFF(lvg_, iQ_, initMetric, Collections.emptySet());
+
+				sim[i][j] = ((BFF) algorithm).getSolutionDensity();
+				sim[j][i] = ((BFF) algorithm).getSolutionDensity();
+
+				if (max < sim[i][j]) {
+					max = sim[i][j];
+					p[0] = i;
+					p[1] = j;
+				}
+			}
+		}
+
+		BitSet iQ_r = new BitSet();
+		Set<Integer> checked = new HashSet<>(), all = new HashSet<>();
+
+		iQ_r.set(times.get(p[0]));
+		iQ_r.set(times.get(p[1]));
+		checked.add(p[0]);
+		checked.add(p[1]);
+
+		if (iQ_r.cardinality() == k)
+			return iQ_r;
+
+		for (int i = 0; i < times.size(); i++) {
+			if (!checked.contains(i))
+				all.add(i);
+		}
+
+		if (runMin) {
+			while (iQ_r.cardinality() != k) {
+				int t = -1;
+				max = -1;
+
+				for (int j : all) {
+					double min = Double.MAX_VALUE;
+
+					for (int i : checked) {
+						double s = sim[i][j];
+
+						if (min > s)
+							min = s;
+					}
+
+					if (min > max) {
+						max = min;
+						t = j;
+					}
+				}
+
+				iQ_r.set(times.get(t));
+				all.remove(t);
+				checked.add(t);
+			}
+		} else {
+			while (iQ_r.cardinality() != k) {
+				int t = -1;
+				max = -1;
+
+				for (int j : all) {
+					double s = 0;
+
+					for (int i : checked)
+						s += sim[i][j];
+
+					if (max < s) {
+						max = s;
+						t = j;
+					}
+				}
+
+				iQ_r.set(times.get(t));
+				all.remove(t);
+				checked.add(t);
+			}
+		}
+
+		return iQ_r;
+	}
+
+	/**
 	 * Return a callable object
 	 * 
 	 * @param iQ
@@ -488,7 +1138,7 @@ public class O2BFF_Problem {
 	 */
 	private Callable<?> setCallable(BitSet iQ, String dataset) {
 		Callable<?> c = () -> {
-			int k = (int) (iQ.cardinality() * 0.2);
+			int k = (int) (Math.round((iQ.cardinality() * 0.2)));
 			runMetrics(dataset, iQ, k, 4 * k, k);
 			return true;
 		};

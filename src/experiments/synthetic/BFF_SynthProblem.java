@@ -141,7 +141,7 @@ public class BFF_SynthProblem {
 				int denseFound = 0;
 
 				for (int id : S)
-					if (id < sizeOfDense)
+					if (id >= lvg.size() - sizeOfDense)
 						denseFound++;
 
 				stats.write("\nDense Nodes found: " + denseFound + "/" + sizeOfDense + "\n");
@@ -172,6 +172,7 @@ public class BFF_SynthProblem {
 	 */
 	private void initializeRunnables() {
 		r1 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);
@@ -180,6 +181,7 @@ public class BFF_SynthProblem {
 		};
 
 		r2 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);
@@ -188,6 +190,7 @@ public class BFF_SynthProblem {
 		};
 
 		r3 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);
@@ -196,6 +199,7 @@ public class BFF_SynthProblem {
 		};
 
 		r4 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);
@@ -204,6 +208,7 @@ public class BFF_SynthProblem {
 		};
 
 		r5 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);
@@ -212,6 +217,7 @@ public class BFF_SynthProblem {
 		};
 
 		r6 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);
@@ -220,6 +226,7 @@ public class BFF_SynthProblem {
 		};
 
 		r7 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);
@@ -228,6 +235,7 @@ public class BFF_SynthProblem {
 		};
 
 		r8 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);
@@ -236,6 +244,7 @@ public class BFF_SynthProblem {
 		};
 
 		r9 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);
@@ -244,6 +253,7 @@ public class BFF_SynthProblem {
 		};
 
 		r10 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);
@@ -252,6 +262,7 @@ public class BFF_SynthProblem {
 		};
 
 		r11 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);
@@ -260,6 +271,7 @@ public class BFF_SynthProblem {
 		};
 
 		r12 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);
@@ -268,6 +280,7 @@ public class BFF_SynthProblem {
 		};
 
 		r13 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);
@@ -276,6 +289,7 @@ public class BFF_SynthProblem {
 		};
 
 		r14 = new Runnable() {
+			@Override
 			public void run() {
 				BitSet iQ = new BitSet();
 				iQ.set(1, 10);

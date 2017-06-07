@@ -22,7 +22,7 @@ public class Config {
 	public static final int MM = 1, MA = 2, AM = 3, AA = 4, TAM = 5, TMA = 6, AMA = 7, MAM = 8, DCS = 9;
 
 	// O^2 BFF
-	public static final int RANDOM = 0, CONT_BEST_K = 1, AT_LEAST_K = 2;
+	public static final int RANDOM = 0, CONT_BEST_K = 1, AT_LEAST_K = 2, AGGR = 3, DENS_IN = 4, SET_IN = 5;
 
 	public static int ITERATIONS;
 
@@ -32,10 +32,15 @@ public class Config {
 
 	public static boolean RUN_BFF;
 	public static boolean RUN_O2_BFF;
+	public static boolean RUN_O2_INCREMENTAL;
+	public static boolean RUN_O2_ITERATIVE;
 
 	public static boolean RUN_RANDOM;
 	public static boolean RUN_ATLEAST_K;
 	public static boolean RUN_BESTK_CONT;
+	public static boolean RUN_AGGR;
+	public static boolean RUN_DENS_IN;
+	public static boolean RUN_SET_IN;
 
 	public static boolean RUN_DCS;
 	public static boolean RUN_FIND_BFF;
@@ -66,10 +71,15 @@ public class Config {
 
 			RUN_BFF = Boolean.parseBoolean(Settings.getProperty("RunBFF", "false"));
 			RUN_O2_BFF = Boolean.parseBoolean(Settings.getProperty("RunO2BFF", "false"));
+			RUN_O2_ITERATIVE = Boolean.parseBoolean(Settings.getProperty("RunO2Iter", "false"));
+			RUN_O2_INCREMENTAL = Boolean.parseBoolean(Settings.getProperty("RunO2Incr", "false"));
 
+			RUN_AGGR = Boolean.parseBoolean(Settings.getProperty("RunAggr", "false"));
 			RUN_RANDOM = Boolean.parseBoolean(Settings.getProperty("RunRandom", "false"));
 			RUN_ATLEAST_K = Boolean.parseBoolean(Settings.getProperty("RunAtLeastK", "false"));
 			RUN_BESTK_CONT = Boolean.parseBoolean(Settings.getProperty("RunBestK", "false"));
+			RUN_SET_IN = Boolean.parseBoolean(Settings.getProperty("RunSetIncr", "false"));
+			RUN_DENS_IN = Boolean.parseBoolean(Settings.getProperty("RunDensIncr", "false"));
 			ITERATIONS = Integer.parseInt(Settings.getProperty("ITERATIONS", "5"));
 
 			RUN_DCS = Boolean.parseBoolean(Settings.getProperty("RunDCS", "false"));
