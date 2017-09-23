@@ -9,7 +9,8 @@ import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
 public class ReadComp {
-	private static String path = "/home/ksemer/workspaces/BFF/dataset_synth_improv/synthetic_31-05/competitor_pa=09/o2/";
+	private static String path = "/home/ksemer/workspaces/BFF/real_june/new_set_o2/o2/";
+	// "/home/ksemer/workspaces/BFF/dataset_synth_improv/synthetic_31-05/competitor_pa=09/o2/";
 	private static String dataset = "synthetic_pr:0.9_s:_";
 	private static int ITERATION_DATA = 10;
 	private static int DENSE = 100;
@@ -185,6 +186,9 @@ public class ReadComp {
 			if (line.contains("Iteration")) {
 				token = line.split("\\s+");
 				nodesReturned = Integer.parseInt(token[5].trim());
+			} else if (line.contains("Score:")) {
+				token = line.split("\\s+");
+				nodesReturned = Integer.parseInt(token[3].trim());
 			}
 
 			if (line.contains("Dense Nodes B")) {

@@ -10,7 +10,7 @@ import java.util.Locale;
 
 public class ReadRealDataset {
 	private static String path = "/home/ksemer/workspaces/BFF/real_june/o2/";
-	private static String dataset = "oregon2";
+	private static String dataset = "DBLP_Graph_DB1+ALL";
 	private static int ITERATIONS = 5;
 	static DecimalFormat df;
 	static DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols(Locale.US);

@@ -22,7 +22,8 @@ public class Config {
 	public static final int MM = 1, MA = 2, AM = 3, AA = 4, TAM = 5, TMA = 6, AMA = 7, MAM = 8, DCS = 9;
 
 	// O^2 BFF
-	public static final int RANDOM = 0, CONT_BEST_K = 1, AT_LEAST_K = 2, AGGR = 3, DENS_IN = 4, SET_IN = 5;
+	public static final int RANDOM = 0, CONT_BEST_K = 1, AT_LEAST_K = 2, AGGR = 3, DENS_IN = 4, DENS_IN_MIN = 5,
+			DENS_IN_AVG = 6, SET_IN = 7, SET_IN_MIN = 8, SET_IN_AVG = 9, SET_IN_NEW = 10;
 
 	public static int ITERATIONS;
 
@@ -39,8 +40,14 @@ public class Config {
 	public static boolean RUN_ATLEAST_K;
 	public static boolean RUN_BESTK_CONT;
 	public static boolean RUN_AGGR;
+
 	public static boolean RUN_DENS_IN;
+	public static boolean RUN_DENS_IN_MIN;
+	public static boolean RUN_DENS_IN_AVG;
 	public static boolean RUN_SET_IN;
+	public static boolean RUN_SET_IN_MIN;
+	public static boolean RUN_SET_IN_AVG;
+	public static boolean RUN_SET_IN_NEW;
 
 	public static boolean RUN_DCS;
 	public static boolean RUN_FIND_BFF;
@@ -78,8 +85,16 @@ public class Config {
 			RUN_RANDOM = Boolean.parseBoolean(Settings.getProperty("RunRandom", "false"));
 			RUN_ATLEAST_K = Boolean.parseBoolean(Settings.getProperty("RunAtLeastK", "false"));
 			RUN_BESTK_CONT = Boolean.parseBoolean(Settings.getProperty("RunBestK", "false"));
+			
 			RUN_SET_IN = Boolean.parseBoolean(Settings.getProperty("RunSetIncr", "false"));
+			RUN_SET_IN_MIN = Boolean.parseBoolean(Settings.getProperty("RunSetIncrM", "false"));
+			RUN_SET_IN_AVG = Boolean.parseBoolean(Settings.getProperty("RunSetIncrA", "false"));
+			RUN_SET_IN_NEW = Boolean.parseBoolean(Settings.getProperty("RunSetIncrN", "false"));
+
 			RUN_DENS_IN = Boolean.parseBoolean(Settings.getProperty("RunDensIncr", "false"));
+			RUN_DENS_IN_MIN = Boolean.parseBoolean(Settings.getProperty("RunDensIncrM", "false"));
+			RUN_DENS_IN_AVG = Boolean.parseBoolean(Settings.getProperty("RunDensIncrA", "false"));
+			
 			ITERATIONS = Integer.parseInt(Settings.getProperty("ITERATIONS", "5"));
 
 			RUN_DCS = Boolean.parseBoolean(Settings.getProperty("RunDCS", "false"));

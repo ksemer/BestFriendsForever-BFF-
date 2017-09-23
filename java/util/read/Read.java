@@ -9,8 +9,9 @@ import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
 public class Read {
-	private static String path = "/home/ksemer/workspaces/BFF/dataset_synth_improv/synthetic_31-05/pa=09/o2/";
-	private static String dataset = "rand_";
+	private static String path = "/home/ksemer/workspaces/BFF/real_june/new_set_o2/o2/";
+			//"/home/ksemer/workspaces/BFF/dataset_synth_improv/synthetic_31-05/pa=09/o2/";
+	private static String dataset = "rand__";
 	private static int ITERATION_DATA = 10;
 	private static int DENSE = 100;
 	private static boolean precision = true, recall = true;
@@ -71,11 +72,11 @@ public class Read {
 					prec[m-1][j]+= res[0];
 					rec[m-1][j]+= res[1];
 
-					if (k == 2) {
-						res = read(m, 3, path + dataset + "3_it_" + it + "_m=" + m + "_k=3" + extra);
-						prec[m-1][j+1]+= res[0];
-						rec[m-1][j+1]+= res[1];
-					}
+//					if (k == 2) {
+//						res = read(m, 3, path + dataset + "3_it_" + it + "_m=" + m + "_k=3" + extra);
+//						prec[m-1][j+1]+= res[0];
+//						rec[m-1][j+1]+= res[1];
+//					}
 				}
 				
 
@@ -179,6 +180,9 @@ public class Read {
 			if (line.contains("Iteration")) {
 				token = line.split("\\s+");			
 				nodesReturned = Integer.parseInt(token[5].trim());
+			} else if (line.contains("Score:")) {
+				token = line.split("\\s+");			
+				nodesReturned = Integer.parseInt(token[3].trim());				
 			}
 			
 			if (line.contains("Dense Nodes A")) {
