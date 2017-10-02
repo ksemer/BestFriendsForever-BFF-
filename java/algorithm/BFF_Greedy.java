@@ -83,9 +83,10 @@ public class BFF_Greedy {
 			}
 		}
 
-		if (!executeWithSeeds)
+		if (!executeWithSeeds) {
 			// run Charikar algorithm
 			runCharikar(lvg_);
+		}
 
 		int step = stepsOfMaximumScore.entrySet().iterator().next().getValue().get(0);
 		Set<Node> conn = null;
@@ -139,6 +140,7 @@ public class BFF_Greedy {
 			}
 
 			for (Node node : lvg.getNodes()) {
+
 				// for metric MA
 				if (metric == Config.MA) {
 					minScore = Double.MAX_VALUE;
@@ -165,6 +167,7 @@ public class BFF_Greedy {
 
 					if (lvg.size() - 1 == 0)
 						generalMinScore = 0;
+
 				} else if (metric == Config.AM) { // for metric AM
 					nspti = nodesScorePerTimeInstant.get(node);
 					sumAMNeigb = 0;
@@ -179,23 +182,16 @@ public class BFF_Greedy {
 							n = node;
 						}
 					} else {
-						updateEdges(node, false);
-
-						int temp = computeMinPerTime(node);
+						int temp = updateEdges(node, false);
 
 						if (temp > generalMinScore) {
 							generalMinScore = temp;
 							n = node;
 							nodeNsumAM = sumAMNeigb;
-						}
-
-						else if (temp == generalMinScore && sumAMNeigb < nodeNsumAM) {
+						} else if (temp == generalMinScore && sumAMNeigb < nodeNsumAM) {
 							nodeNsumAM = sumAMNeigb;
 							n = node;
 						}
-
-						// restore edges
-						updateEdges(node, true);
 					}
 				}
 			}
@@ -203,7 +199,7 @@ public class BFF_Greedy {
 			// remove node
 			lvg_.getNode(n.getID()).setRemovalStep(step);
 			n.setRemovalStep(step);
-			updateEdges(n, false);
+			updateEdges(n, true);
 
 			if (metric == Config.AM) {
 				nspti = nodesScorePerTimeInstant.get(n);
@@ -256,16 +252,22 @@ public class BFF_Greedy {
 	}
 
 	/**
+	 * Remove edges of the given node Update scores
 	 * 
 	 * @param node
 	 */
-	private void updateEdges(Node node, boolean restore) {
+	private int updateEdges(Node node, boolean remove) {
 		Set<Node> set;
-		int t;
+		int t, score = 0, j = 0;
 		BitSet l;
 		Counter c;
 		Node trg;
 		Map<Integer, Counter> nspti;
+
+		int[] min_ = null;
+
+		if (metric == Config.AM && !remove)
+			min_ = minPerTimeAsArray(node);
 
 		for (Iterator<Entry<Node, BitSet>> edge = node.getAdjacencyAsMap().entrySet().iterator(); edge.hasNext();) {
 			Entry<Node, BitSet> entry = edge.next();
@@ -283,36 +285,51 @@ public class BFF_Greedy {
 			l = (BitSet) entry.getValue().clone();
 			l.and(iQ);
 
+			if (metric == Config.AM)
+				j = 0;
+
 			// update score per time instant structure
 			for (Iterator<Integer> i = l.stream().iterator(); i.hasNext();) {
 				t = i.next();
 
 				c = nspti.get(t);
 
-				if (metric == Config.MA)
+				if (metric == Config.MA) {
 					numberOfEdgesPerTimeInstant.get(t).decrease();
-
-				if (metric == Config.AM) {
-					perTimeInstantScore.get(t).get(c.getValue()).remove(trg);
-
-					if (perTimeInstantScore.get(t).get(c.getValue()).isEmpty())
-						perTimeInstantScore.get(t).remove(c.getValue());
-				}
-
-				if (restore)
-					c.increase();
-				else
 					c.decrease();
+				} else if (metric == Config.AM) {
 
-				if (metric == Config.AM) {
-					if ((set = perTimeInstantScore.get(t).get(c.getValue())) == null) {
-						set = new HashSet<>();
-						perTimeInstantScore.get(t).put(c.getValue(), set);
+					// remove edges
+					if (remove) {
+						perTimeInstantScore.get(t).get(c.getValue()).remove(trg);
+
+						if (perTimeInstantScore.get(t).get(c.getValue()).isEmpty())
+							perTimeInstantScore.get(t).remove(c.getValue());
+
+						c.decrease();
+
+						if ((set = perTimeInstantScore.get(t).get(c.getValue())) == null) {
+							set = new HashSet<>();
+							perTimeInstantScore.get(t).put(c.getValue(), set);
+						}
+
+						set.add(trg);
+					} else {
+						// compute the new score if node will be removed in the next step
+						if (c.getValue() - 1 < min_[j])
+							min_[j] = c.getValue() - 1;
+						j++;
 					}
-					set.add(trg);
 				}
 			}
 		}
+
+		if (metric == Config.AM && !remove) {
+			for (int v : min_)
+				score += v;
+		}
+
+		return score;
 	}
 
 	/**
@@ -429,6 +446,36 @@ public class BFF_Greedy {
 
 		// return the sum of am
 		return sum;
+	}
+
+	/**
+	 * Return min degree per time instance
+	 * 
+	 * @param n
+	 * @return
+	 */
+	private int[] minPerTimeAsArray(Node n) {
+		int c, t, j = 0;
+		int[] min = new int[iQ.cardinality()];
+
+		for (Iterator<Integer> i = iQ.stream().iterator(); i.hasNext();) {
+			t = i.next();
+
+			c = perTimeInstantScore.get(t).firstKey();
+
+			// check if n is the minimum so after its potential deletion which
+			// is the minimum
+			if (n != null) {
+				Set<Node> x = perTimeInstantScore.get(t).get(c);
+				if (x.size() == 1 && x.contains(n))
+					c = perTimeInstantScore.get(t).ceilingKey(c + 1);
+			}
+
+			min[j] = c;
+			j++;
+		}
+
+		return min;
 	}
 
 	/**
