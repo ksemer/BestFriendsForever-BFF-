@@ -59,3 +59,7 @@ A file with each line representing an edge between two nodes in a specific time 
   
 ## Running BFF system
 run /java/system/Main.java
+
+### Licensing
+
+BestFriendsForever-BFF- is an open source product licensed under GPLv3.
