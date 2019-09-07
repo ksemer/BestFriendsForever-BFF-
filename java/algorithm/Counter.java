@@ -23,7 +23,6 @@ public class Counter {
 	
 	/**
 	 * Add c to counter
-	 * @param c
 	 */
 	public void increase(int c) {
 		counter+=c;
@@ -38,7 +37,6 @@ public class Counter {
 	
 	/**
 	 * Set the counter to val
-	 * @param val
 	 */
 	public void set(int val) {
 		counter = val;
@@ -46,7 +44,6 @@ public class Counter {
 	
 	/**
 	 * Return counter
-	 * @return
 	 */
 	public int getValue() {
 		return counter;

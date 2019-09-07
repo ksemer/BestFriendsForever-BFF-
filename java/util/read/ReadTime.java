@@ -23,8 +23,8 @@ public class ReadTime {
 	// "rand_24_snap:40_24_it_0";
 	// "synthetic_pr:0.9_s:_
 	private static int ITERATION_DATA = 5;
-	static DecimalFormat df;
-	static DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols(Locale.US);
+	private static DecimalFormat df;
+	private static DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols(Locale.US);
 
 	public static void main(String[] args) throws IOException {
 		otherSymbols.setDecimalSeparator('.');
@@ -70,7 +70,7 @@ public class ReadTime {
 		init("_dm.txt");
 	}
 
-	public static void initbff(String extra) throws IOException {
+	private static void initbff(String extra) throws IOException {
 
 		int time, sec;
 		String out;
@@ -78,7 +78,7 @@ public class ReadTime {
 		for (int m = 1; m <= 9; m++) {
 			out = "";
 
-			time = read(m, path + dataset + "_" + m + extra);
+			time = read(path + dataset + "_" + m + extra);
 
 			if (toSeconds)
 				sec = 1000;
@@ -94,7 +94,7 @@ public class ReadTime {
 		}
 	}
 
-	public static void init(String extra) throws IOException {
+	private static void init(String extra) throws IOException {
 
 		int[][] res = new int[4][5];
 		int time, j, sec;
@@ -108,9 +108,9 @@ public class ReadTime {
 				for (int it = 0; it < ITERATION_DATA; it++) {
 
 					if (isReal)
-						time = read(m, path + dataset + "_m=" + m + "_k=" + k + extra);
+						time = read(path + dataset + "_m=" + m + "_k=" + k + extra);
 					else
-						time = read(m, path + dataset + k + "_it_" + it + "_m=" + m + "_k=" + k + extra);
+						time = read(path + dataset + k + "_it_" + it + "_m=" + m + "_k=" + k + extra);
 					res[m - 1][j] += time;
 				}
 
@@ -125,14 +125,13 @@ public class ReadTime {
 		}
 	}
 
-	public static void initR(String extra) throws IOException {
+	private static void initR(String extra) throws IOException {
 		String ex;
 		int[][] res = new int[4][5];
-		String out;
 		int time, j, sec;
+		StringBuilder out = new StringBuilder("");
 
 		for (int m = 1; m <= 9; m++) {
-			out = "";
 			j = 0;
 
 			for (int k = 2; k <= 8; k += 2) {
@@ -144,9 +143,9 @@ public class ReadTime {
 						ex = ex.replace("*", "" + it);
 
 						if (isReal)
-							time = read(m, path + "random/" + dataset + "_m=" + m + "_k=" + k + ex);
+							time = read(path + "random/" + dataset + "_m=" + m + "_k=" + k + ex);
 						else
-							time = read(m, path + "random/" + dataset + "_it_" + IT + "_m=" + m + "_k=" + k + ex);
+							time = read(path + "random/" + dataset + "_it_" + IT + "_m=" + m + "_k=" + k + ex);
 						res[m - 1][j] += time;
 					}
 				}
@@ -156,16 +155,15 @@ public class ReadTime {
 				else
 					sec = 1;
 
-				out += ("(" + k * 10 + "," + df.format((res[m - 1][j] / (ITERATION_DATA * 5)) / sec) + ")");
-
+				out.append("(" + (k * 10) + "," + df.format(res[m - 1][j] / (ITERATION_DATA * 5) / sec) + ")\n")
 			}
-			System.out.println(out);
 		}
+		System.out.println(out.toString());
 	}
 
-	public static int read(int m, String path) throws IOException {
+	private static int read(String path) throws IOException {
 		BufferedReader br = new BufferedReader(new FileReader(path));
-		String line = null;
+		String line;
 		String[] token;
 		int time = -1;
 

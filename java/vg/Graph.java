@@ -2,7 +2,6 @@ package vg;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -19,24 +18,19 @@ public class Graph implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	// =================================================================
-	private Map<Integer, Node> nodes;
+	private Map<Integer, Node> nodes = new HashMap<>();
 	// =================================================================
 
 	/**
 	 * Constructor
-	 * 
-	 * @throws IOException
 	 */
 	public Graph() {
-		nodes = new HashMap<Integer, Node>();
 	}
 
 	/**
 	 * Add node in LVG
-	 * 
-	 * @param node
 	 */
-	public void addNode(int node) {
+	void addNode(int node) {
 		if (nodes.get(node) == null) {
 			nodes.put(node, new Node(node));
 		}
@@ -44,9 +38,6 @@ public class Graph implements Serializable {
 
 	/**
 	 * Get node object with id = nodeID
-	 * 
-	 * @param nodeID
-	 * @return
 	 */
 	public Node getNode(int nodeID) {
 		return nodes.get(nodeID);
@@ -54,19 +45,13 @@ public class Graph implements Serializable {
 
 	/**
 	 * Add edge in LVG
-	 * 
-	 * @param src
-	 * @param trg
-	 * @param time
 	 */
-	public void addEdge(int src, int trg, int time) {
+	void addEdge(int src, int trg, int time) {
 		nodes.get(src).addEdge(nodes.get(trg), time);
 	}
 
 	/**
 	 * Return the version graph nodes
-	 * 
-	 * @return
 	 */
 	public Collection<Node> getNodes() {
 		return nodes.values();
@@ -74,8 +59,6 @@ public class Graph implements Serializable {
 
 	/**
 	 * Return version graph nodes as a map
-	 * 
-	 * @return
 	 */
 	public Map<Integer, Node> getNodesAsMap() {
 		return this.nodes;
@@ -83,8 +66,6 @@ public class Graph implements Serializable {
 
 	/**
 	 * Removes node with id nodeID
-	 * 
-	 * @param nodeID
 	 */
 	public void removeNode(int nodeID) {
 		nodes.remove(nodeID);
@@ -92,8 +73,6 @@ public class Graph implements Serializable {
 
 	/**
 	 * Graph Size
-	 * 
-	 * @return
 	 */
 	public int size() {
 		return nodes.size();
@@ -101,8 +80,6 @@ public class Graph implements Serializable {
 
 	/**
 	 * Returns true if graph is empty
-	 * 
-	 * @return
 	 */
 	public boolean isEmpty() {
 		return nodes.size() == 0;
