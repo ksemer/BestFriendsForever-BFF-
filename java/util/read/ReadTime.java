@@ -155,7 +155,7 @@ public class ReadTime {
 				else
 					sec = 1;
 
-				out.append("(" + (k * 10) + "," + df.format(res[m - 1][j] / (ITERATION_DATA * 5) / sec) + ")\n")
+				out.append("(" + (k * 10) + "," + df.format(res[m - 1][j] / (ITERATION_DATA * 5) / sec) + ")\n");
 			}
 		}
 		System.out.println(out.toString());
